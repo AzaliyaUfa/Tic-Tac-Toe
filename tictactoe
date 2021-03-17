@@ -1,0 +1,239 @@
+package tictactoe;
+
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Tictactoe newGame = new Tictactoe();
+        newGame.game();
+    }
+}
+enum States {
+    NF ("Game not finished"),
+    D ("Draw"),
+    WX ("X wins"),
+    WO ("O wins"),
+    I ("Impossible"),
+    U ("unknown");
+
+    String state;
+    States(String state) {
+        this.state = state;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+}
+
+class Tictactoe {
+
+    String twoDimArray[][] = new String[3][5];
+    States flag = States.U;
+    String winner = "unknown";
+    int row;
+    int col;
+    boolean inputError = true;
+    String player = "X";
+
+    public void game() {
+        this.getInitialField();
+        this.printField();
+        while (flag == States.U || flag == States.I|| flag == States.NF ) {
+            this.inputError = true;
+            this.play();
+            this.rowTest();
+            this.columnTest();
+            this.diagTest();
+            this.setState();
+        }
+
+        //this.quantityTest();
+
+        System.out.println(this.flag.getState());
+    }
+
+    public void play() {
+        System.out.println("Enter the coordinates: ");
+        this.allTests();
+        this.twoDimArray[this.row - 1][this.col] = this.player;
+        if (this.player.equals("X")) {
+            this.player = "O";
+        } else {
+            this.player = "X";
+        }
+        this.printField();
+    }
+
+    public void allTests() {
+        this.inputTestEnterNumbers();
+        this.inputError = true;
+        this.outsideTest();
+        this.inputError = true;
+        this.occupiedTest();
+    }
+
+    public void inputTestEnterNumbers() {
+        Scanner sc = new Scanner(System.in);
+        while (this.inputError) {
+            String input = sc.nextLine();
+            String[] coor = input.split(" ");
+            if (coor.length == 2) {
+                boolean firstInput = coor[0].matches("[0-9]");
+                boolean secInput = coor[0].matches("[0-9]");
+                if (firstInput && secInput) {
+                    this.row = Integer.parseInt(coor[0].trim());
+                    this.col = Integer.parseInt(coor[1].trim());
+                    this.inputError = false;
+                } else {
+                    System.out.println("You should enter numbers!");
+                }
+            } else {
+                System.out.println("You should enter numbers!");
+            }
+        }
+    }
+
+    public void outsideTest() {
+        while (this.inputError) {
+            if (this.row > 3 || this.row < 1 || this.col > 3 || this.col < 1) {
+                System.out.println("Coordinates should be from 1 to 3!");
+                this.allTests();
+            } else {
+                this.inputError = false;
+            }
+        }
+    }
+
+    public void occupiedTest() {
+        while (this.inputError) {
+            if (!this.twoDimArray[this.row - 1][this.col].equals("_")) {
+                System.out.println("This cell is occupied! Choose another one!");
+                this.allTests();
+            } else {
+                this.inputError = false;
+            }
+        }
+    }
+
+    public void rowTest() {
+        boolean row1half;
+        boolean row2half;
+        int count = 0;
+        for (int i = 0; i < 3; i++) {
+            row1half = this.twoDimArray[i][1].equals(this.twoDimArray[i][2]);
+            row2half = this.twoDimArray[i][1].equals(this.twoDimArray[i][3]);
+            if (row1half && row2half) {
+                count++;
+            }
+            if (row1half && row2half && count == 1) {
+                this.winner = this.twoDimArray[i][1];
+                break;
+            } else if (count > 1) {
+                this.flag = States.I;
+            }
+        }
+    }
+
+    public void columnTest() {
+        boolean column1half;
+        boolean column2half;
+        int count = 0;
+        // проверка на 3 в столбец
+        for (int j = 1; j < 4; j++) {
+            column1half = this.twoDimArray[0][j].equals(this.twoDimArray[1][j]);
+            column2half = this.twoDimArray[0][j].equals(this.twoDimArray[2][j]);
+            if (column1half && column2half) {
+                this.winner = this.twoDimArray[0][j];
+                count++;
+            }
+        }
+        if (count > 1) {
+            this.winner = "unknown";
+            this.flag = States.I;
+        }
+    }
+
+    public void diagTest() {
+                // проверка на 3 в диагонали
+        boolean diag11half = this.twoDimArray[0][1].equals(this.twoDimArray[1][2]);
+        boolean diag12half = this.twoDimArray[0][1].equals(this.twoDimArray[2][3]);
+        boolean diag21half = this.twoDimArray[0][3].equals(this.twoDimArray[1][2]);
+        boolean diag22half = this.twoDimArray[0][3].equals(this.twoDimArray[2][1]);
+        if (diag11half && diag12half && diag21half && diag22half) {
+            this.flag = States.I;
+        } else if (diag11half && diag12half || diag21half && diag22half) {
+            this.winner = this.twoDimArray[1][2];
+        }
+    }
+
+    public void quantityTest() {
+        int oCount = 0;
+        int xCount = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (this.twoDimArray[i][j].equals("O")) {
+                    oCount++;
+                } else if (this.twoDimArray[i][j].equals("X")) {
+                    xCount++;
+                }
+            }
+        }
+        if (Math.abs(oCount - xCount) > 1) {
+            this.flag = States.I;
+        }
+    }
+
+    public void setState() {
+        if (this.winner.equals("X")) {
+            this.flag = States.WX;
+        } else if (this.winner.equals("O")) {
+            this.flag = States.WO;
+        } else {
+            this.notFinishedOrDraw();
+        }
+    }
+
+    public void notFinishedOrDraw() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 1; j < 4; j++) {
+                if (this.twoDimArray[i][j].equals("_")/* && this.flag != States.I*/) {
+                    this.flag = States.NF;
+                    break;
+                }
+            }
+            if (this.flag == States.NF) {
+                    break; /*if (this.flag != States.I)*/
+                } else {
+                    this.flag = States.D;
+                }
+        }
+    }
+
+    public void getInitialField() {
+        //Scanner sc = new Scanner(System.in);
+        //System.out.print("Enter cells: ");
+        //String input = sc.nextLine();
+        //String[] array = input.split("");
+        //int n = 0;
+        for (int i = 0; i < 3; i++) {
+            this.twoDimArray[i][0] = "|";
+            this.twoDimArray[i][4] = "|";
+            for (int j = 1; j < 4; j++) {
+                this.twoDimArray[i][j] = "_";
+            }
+        }
+    }
+
+    public void printField() {
+        System.out.println("---------");
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 5; j++) {
+                System.out.print(this.twoDimArray[i][j] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("---------");
+    }
+}
